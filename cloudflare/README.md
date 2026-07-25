@@ -14,7 +14,7 @@ such.
 `flush_cache.sh` takes your API token with `purge:cache` permissions and lets you specify your domain on a command line
 for which you want to purge all cache entries (and force Cloudflare to refresh its cache).
 
-`zone_tool.py` is a tool to export and import DNS records from a Cloudflare zone.
+`zonetool.py` is a tool to export and import DNS records from a Cloudflare zone.
 
 It is a quick way to flush/purge the cache without logging in to your Cloudflare portal, especially if you have many
 domains that you copy content to from the command line like I do (I use [rsync](https://en.wikipedia.org/wiki/Rsync))
