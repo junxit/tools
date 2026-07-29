@@ -1,12 +1,12 @@
 Replicate my Claude Code statusline. Before making any changes, do a safety pass:
 
 - If `~/.claude/settings.json` exists and contains a `statusLine` key, print its current value verbatim so I can see what's being replaced.
-- If `~/.claude/statusline-command.sh` already exists, copy it to `~/.claude/statusline-command.sh.bak` (overwriting any prior `.bak`) before writing the new version.
+- If `~/.claude/statusline.sh` already exists, copy it to `~/.claude/statusline.sh.bak` (overwriting any prior `.bak`) before writing the new version.
 - If the existing `statusLine.command` points to a different script path, mention that path explicitly — that file will be left on disk but no longer invoked.
 
 Then do two things:
 
-**1. Create `~/.claude/statusline-command.sh`** with exactly these contents, then `chmod +x` it:
+**1. Create `~/.claude/statusline.sh`** with exactly these contents, then `chmod +x` it:
 
 ```bash
 #!/bin/bash
@@ -18,32 +18,37 @@ input=$(cat)
 current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
 model_name=$(echo "$input" | jq -r '.model.display_name // .model.id')
 session_name=$(echo "$input" | jq -r '.session_name // empty')
+pr_number=$(echo "$input" | jq -r '.pr.number // empty')
+pr_review_state=$(echo "$input" | jq -r '.pr.review_state // empty')
 
 # Token usage statistics
 total_input=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
 total_output=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
-remaining_pct=$(echo "$input" | jq -r '.context_window.remaining_percentage // 100')
 
-# Calculate costs (Anthropic pricing)
-# Claude Opus 4.6: $15/MTok input, $75/MTok output
-# Claude Sonnet 4.5: $3/MTok input, $15/MTok output
-model_id=$(echo "$input" | jq -r '.model.id')
-if [[ "$model_id" == *"opus"* ]]; then
-    input_cost_per_mtok=15
-    output_cost_per_mtok=75
-else
-    input_cost_per_mtok=3
-    output_cost_per_mtok=15
-fi
+# Cost and session activity (provided directly by Claude Code)
+total_cost=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
+total_cost_fmt=$(printf "%.2f" "$total_cost" 2>/dev/null || echo "$total_cost")
+lines_added=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
+lines_removed=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+duration_ms=$(echo "$input" | jq -r '.cost.total_api_duration_ms // 0')
 
-# Calculate total cost
-input_cost=$(echo "scale=4; $total_input * $input_cost_per_mtok / 1000000" | bc)
-output_cost=$(echo "scale=4; $total_output * $output_cost_per_mtok / 1000000" | bc)
-total_cost=$(echo "scale=4; $input_cost + $output_cost" | bc)
-
-# Format costs with leading zero if needed
-if [[ "$total_cost" == .* ]]; then total_cost="0$total_cost"; fi
+# Human-readable API (active) time
+format_duration() {
+    local ms="$1"
+    local total_sec=$(( ms / 1000 ))
+    local h=$(( total_sec / 3600 ))
+    local m=$(( (total_sec % 3600) / 60 ))
+    local s=$(( total_sec % 60 ))
+    if [ "$h" -gt 0 ]; then
+        printf "%dh %dm" "$h" "$m"
+    elif [ "$m" -gt 0 ]; then
+        printf "%dm %ds" "$m" "$s"
+    else
+        printf "%ds" "$s"
+    fi
+}
+duration_fmt=$(format_duration "$duration_ms")
 
 # User, host, and directory info
 user=$(whoami)
@@ -66,7 +71,7 @@ total_input_fmt=$(format_number "$total_input")
 total_output_fmt=$(format_number "$total_output")
 
 # Build status line
-# Format: user@host:path (branch) | Model | Tokens: in/out | Context: X% | Cost: $X.XX
+# Format: user@host:path (branch) | Model | Tokens: in/out | Context: X% | Cost: $X.XX | Lines: +N/-N | PR #N (state) | Time: Xm Ys [session]
 printf "\033[1;32m%s@%s\033[0m:\033[1;34m%s\033[0m%s \033[0;90m|\033[0m " \
     "$user" "$host" "$dir_display" "$git_branch"
 
@@ -76,10 +81,30 @@ printf "\033[1;33mTokens:\033[0m \033[0;36m%s\033[0m/\033[0;36m%s\033[0m \033[0;
     "$total_input_fmt" "$total_output_fmt"
 
 if [ "$used_pct" != "null" ] && [ -n "$used_pct" ]; then
-    printf "\033[1;33mContext:\033[0m \033[0;36m%.1f%%\033[0m \033[0;90m|\033[0m " "$remaining_pct"
+    printf "\033[1;33mContext:\033[0m \033[0;36m%.1f%%\033[0m \033[0;90m|\033[0m " "$used_pct"
 fi
 
-printf "\033[1;33mCost:\033[0m \033[1;32m\$%s\033[0m" "$total_cost"
+printf "\033[1;33mCost:\033[0m \033[1;32m\$%s\033[0m \033[0;90m|\033[0m " "$total_cost_fmt"
+
+printf "\033[1;33mLines:\033[0m \033[0;32m+%s\033[0m/\033[0;31m-%s\033[0m \033[0;90m|\033[0m " \
+    "$lines_added" "$lines_removed"
+
+if [ -n "$pr_number" ]; then
+    if [ -n "$pr_review_state" ]; then
+        case "$pr_review_state" in
+            approved) state_color="0;32" ;;
+            changes_requested) state_color="0;31" ;;
+            pending) state_color="0;33" ;;
+            *) state_color="0;90" ;;
+        esac
+        printf "\033[1;33mPR:\033[0m \033[0;36m#%s\033[0m \033[%sm%s\033[0m \033[0;90m|\033[0m " \
+            "$pr_number" "$state_color" "$pr_review_state"
+    else
+        printf "\033[1;33mPR:\033[0m \033[0;36m#%s\033[0m \033[0;90m|\033[0m " "$pr_number"
+    fi
+fi
+
+printf "\033[1;33mTime:\033[0m \033[0;36m%s\033[0m" "$duration_fmt"
 
 if [ -n "$session_name" ]; then
     printf " \033[0;90m[%s]\033[0m" "$session_name"
@@ -94,11 +119,11 @@ echo
 {
   "statusLine": {
     "type": "command",
-    "command": "<absolute path to ~/.claude/statusline-command.sh on this machine>"
+    "command": "<absolute path to ~/.claude/statusline.sh on this machine>"
   }
 }
 ```
 
-Verify `jq` and `bc` are installed (the script depends on them); install via Homebrew if missing. Confirm the script is executable when done.
+Verify `jq` is installed (the script depends on it); install via Homebrew if missing. Confirm the script is executable when done.
 
-Note on cost persistence across resumed sessions: the script is stateless. Cost survives session interruption + `--resume` because Claude Code itself accumulates per-turn `usage` records in the session transcript at `~/.claude/projects/<slug>/<session-id>.jsonl` and feeds the running totals to the script as `.context_window.total_input_tokens` / `.total_output_tokens`. No extra setup is required for that behavior — it works as long as you resume the same session ID on the same machine.
+Note on cost/usage across resumed sessions: the script is stateless — every figure it shows (`cost.total_cost_usd`, `cost.total_lines_added`/`removed`, `cost.total_api_duration_ms`, and the `context_window.*` token counts) is supplied directly by Claude Code in the status-line JSON payload on each render. Claude Code derives those running totals from the session transcript at `~/.claude/projects/<slug>/<session-id>.jsonl`, so they survive interruption + `--resume` as long as you resume the same session ID on the same machine. No extra setup is required.
