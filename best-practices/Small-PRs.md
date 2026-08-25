@@ -8,6 +8,10 @@ This document makes the costs concrete, explains the philosophy underneath the p
 
 ---
 
+**Self-link:** [boo.gl/small-PRs](https://boo.gl/small-PRs)
+
+---
+
 ## Table of contents
 
 - [The core idea](#the-core-idea)
