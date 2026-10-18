@@ -40,3 +40,16 @@ uv run cloudflare/zonetool.py example.com delete_all                # back up, t
 - `delete_all` asks twice, then writes a timestamped `<domain>.<date>-<time>.before-delete.txt` BIND backup before
   deleting anything.
 - Every command follows the API's pagination, and the script exits non-zero if anything fails.
+
+## Dynamic DNS
+
+`ddns.sh` points an existing A record at the public IPv4 address of the machine it runs on, and does nothing if the
+address hasn't changed. It needs `CF_TOKEN` with DNS:Edit permission on the zone, plus `curl` and `jq`.
+
+```bash
+export CF_TOKEN=...
+cloudflare/ddns.sh example.com home.example.com
+```
+
+It changes only the record's address (a `PATCH`), so the record's TTL, proxy status, comment, and tags stay as they
+are. Run it from cron or launchd to keep the record current.
