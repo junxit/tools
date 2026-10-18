@@ -71,7 +71,7 @@ total_input_fmt=$(format_number "$total_input")
 total_output_fmt=$(format_number "$total_output")
 
 # Build status line
-# Format: user@host:path (branch) | Model | Tokens: in/out | Context: X% | Cost: $X.XX | Lines: +N/-N | PR #N (state) | Time: Xm Ys [session]
+# Format: user@host:path (branch) | Model | Tokens: in/out | Context: X% | Cost: $X.XX | Lines: +N/-N | PR #N (state) | API time: Xm Ys [session]
 printf "\033[1;32m%s@%s\033[0m:\033[1;34m%s\033[0m%s \033[0;90m|\033[0m " \
     "$user" "$host" "$dir_display" "$git_branch"
 
@@ -104,7 +104,7 @@ if [ -n "$pr_number" ]; then
     fi
 fi
 
-printf "\033[1;33mTime:\033[0m \033[0;36m%s\033[0m" "$duration_fmt"
+printf "\033[1;33mAPI time:\033[0m \033[0;36m%s\033[0m" "$duration_fmt"
 
 if [ -n "$session_name" ]; then
     printf " \033[0;90m[%s]\033[0m" "$session_name"
