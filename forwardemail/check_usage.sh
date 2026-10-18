@@ -1,8 +1,11 @@
 #!/bin/zsh
 
-# This scripts retrieves the diskspace usage information for all aliases in the given list of `domains` and stores those in the corresponding .usage.txt file.
+# This script retrieves the disk space usage of every alias in the given list of `domains` and stores it in the corresponding .usage.txt file.
+set -euo pipefail
 
 export API_KEY="your_key_here"
+
+script_dir=$(cd "$(dirname "$0")" && pwd)
 
 # List of domains
 domains=("example1.com" "example2.com")  # Add your domains here
@@ -11,9 +14,9 @@ domains=("example1.com" "example2.com")  # Add your domains here
 for domain in "${domains[@]}"
 do
   echo "Processing domain: $domain"
-  
-  # Run the export command
-  python3 check-usage.py "$domain" | tee "$domain.usage.txt"
-  
+
+  # Run the usage report
+  uv run --project "$script_dir/.." "$script_dir/check-usage.py" "$domain" | tee "$domain.usage.txt"
+
   echo "Finished processing domain: $domain"
 done

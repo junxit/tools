@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+
+      - name: Install pinned tools
+        run: uv sync --locked
+
+      - name: Ruff lint
+        run: uv run --locked ruff check
+
+      - name: Ruff format
+        run: uv run --locked ruff format --check
+
+      - name: ShellCheck scripts
+        run: git ls-files -z '*.sh' '*.zsh' | xargs -0 uv run --locked shellcheck -s bash
+
+      - name: ShellCheck the status line script embedded in the prompt
+        run: |
+          awk '/^```bash$/{f=1;next} /^```$/{f=0} f' claude-code/status-line-prompt.md > "$RUNNER_TEMP/statusline.sh"
+          uv run --locked shellcheck "$RUNNER_TEMP/statusline.sh"

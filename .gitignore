@@ -1,5 +1,22 @@
-# Default ignored files
-/shelf/
-/workspace.xml
+# Editors
 .idea/
 .vscode/
+
+# macOS
+.DS_Store
+
+# Python and uv
+__pycache__/
+.venv/
+.ruff_cache/
+
+# Files the scripts write when run from inside the repo. They hold personal
+# data (alias recipients, DNS records), so they must never be committed.
+/*.json
+/*.txt
+*.usage.txt
+*.before-delete.txt
+*.scan.txt
+forwardemail/*.json
+cloudflare/*.json
+cloudflare/*.txt

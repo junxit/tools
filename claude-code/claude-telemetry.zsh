@@ -8,11 +8,20 @@
 # Scope note: none of this stops prompts, file contents, or command output
 # reaching Anthropic — that is the model API itself. Whether conversations
 # are used for training is an account-level Privacy setting, not an env var.
+# Per the docs, the master switch also leaves the WebFetch domain safety
+# check in place.
+#
+# Side effects: Claude Code stops updating itself (`claude update` still
+# works), and with feature flags off, Remote Control is unavailable.
+#
+# Undoing: unset the variables. Setting CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC,
+# DISABLE_TELEMETRY, or DISABLE_ERROR_REPORTING to 0 or false still opts out.
 
 # Master switch. Suppresses all traffic Anthropic classifies as
-# non-essential: the auto-updater, error reporting, and usage telemetry.
-# The individual flags below are redundant with this but explicit, and
-# stay correct if the definition of "non-essential" ever narrows.
+# non-essential: the auto-updater, error reporting, usage telemetry, and
+# feature-flag fetches. The individual flags below are redundant with this
+# but explicit, and stay correct if the definition of "non-essential" ever
+# narrows.
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 
 # Statsig usage analytics — the product-metrics pipeline (which commands
@@ -37,14 +46,16 @@ export CLAUDE_CODE_DISABLE_VITALS_EMITTER=1
 
 # Auto-update version checks. Largely moot under a Homebrew-managed
 # install, but it removes the startup ping to the release endpoint.
+# Manual `claude update` still works.
 export DISABLE_AUTOUPDATER=1
 
-# Removes /bug, which uploads your conversation transcript to Anthropic.
-# Disabling it means the transcript can't be sent by accident.
-export DISABLE_BUG_COMMAND=1
-
-# Removes /feedback, the other transcript-attaching submission path.
+# Removes /feedback, which uploads your conversation transcript to
+# Anthropic. Disabling it means the transcript can't be sent by accident.
 export DISABLE_FEEDBACK_COMMAND=1
+
+# Older name of DISABLE_FEEDBACK_COMMAND, which Claude Code still accepts;
+# kept so versions that only know the old name are covered too.
+export DISABLE_BUG_COMMAND=1
 
 # Suppresses in-product feedback surveys and their responses.
 export CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1
