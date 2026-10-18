@@ -1,0 +1,31 @@
+[project]
+name = "junxit-tools"
+version = "0.1.0"
+description = "Small command-line utilities for Cloudflare, Forward Email, DNS, and Claude Code."
+readme = "README.md"
+# A lower bound is the only form requires-python takes; the exact interpreter
+# is pinned in .python-version, and uv.lock resolves against it.
+requires-python = ">=3.15"
+dependencies = [
+    "dnspython==2.9.0",
+    "requests==2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.17.1",
+    "shellcheck-py==0.11.0.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py315"
+
+[tool.ruff.lint]
+# Ruff's defaults, plus: every HTTP call needs a timeout, and no catch-all excepts.
+extend-select = ["S113", "BLE001"]
+# These are standalone scripts: logging through the root logger that
+# logging.basicConfig() sets up is intended, not a library anti-pattern.
+ignore = ["LOG015"]
