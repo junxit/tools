@@ -14,6 +14,8 @@ __pycache__/
 # data (alias recipients, DNS records), so they must never be committed.
 /*.json
 /*.txt
+# ...but not the project's own changelog
+!/changelog.txt
 *.usage.txt
 *.before-delete.txt
 *.scan.txt

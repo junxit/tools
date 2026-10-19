@@ -1,0 +1,35 @@
+[2026-10-18] - Version 0.1.0
+- Added: changelog.txt, to record each version's changes
+- Added: Dependabot version updates for the uv lockfile and GitHub Actions (.github/dependabot.yml)
+- Added: Exact dependency pins in pyproject.toml and uv.lock on Python 3.15.0: requests 2.34.2 and dnspython 2.9.0,
+  plus ruff 0.17.1 and shellcheck-py 0.11.0.1 for development
+- Added: CI that runs ruff and ShellCheck on every pull request and push to main
+- Added: cloudflare/ddns.sh, which points an A record at the machine's public IPv4 address
+- Added: dns/scandns.py, which rebuilds a BIND zone file from DNS answers for hosts with no export
+- Added: dns/flatten-spf.py, which flattens an SPF record into IP ranges and checks it for drift
+- Added: dns/check_email_dns.sh, which shows a domain's MX, SPF, DKIM, DMARC, BIMI, MTA-STS, and TLS-RPT records
+- Added: dns/rdap-lookup.zsh, which looks up domain registration data over RDAP
+- Fixed: fe-full.py import cleared descriptions and labels when updating an alias, and lost the quota, disabled state,
+  IMAP, and vacation responder when recreating one; it now restores every field the API accepts
+- Fixed: zonetool.py import sent the BIND file in a format Cloudflare rejects; it now uploads it as multipart form data
+- Fixed: zonetool.py restore never updated existing records, and could have overwritten the wrong one of several
+  records sharing a name; it now matches on type, name, and value
+- Fixed: zonetool.py list, restore, and delete_all stopped after the first 100 records
+- Fixed: The README linked to forwardemail.com, which isn't Forward Email's domain
+- Changed: zonetool.py delete_all writes a timestamped BIND backup before deleting anything
+- Changed: The Forward Email scripts and zonetool.py paginate, time out every request after 30 seconds, and exit
+  non-zero on failure; the wrapper scripts stop at the first failing domain
+- Changed: The Claude Code status line labels its timer "API time"
+- Changed: The READMEs link every tool and add prerequisites, install, run, test, uninstall, and assumptions sections
+- Removed: The Forward Email README's mention of a CSV backup/restore feature, which doesn't exist
+- Removed: Two dead JetBrains entries from .gitignore
+
+[2024-09-08 to 2026-09-12] - Before versioning (details in the git history)
+- Added: Cloudflare cache purge (flush_cache.sh) and Forward Email alias backup, usage report, and POP3 reset
+  scripts (2024-09-15)
+- Added: Cloudflare DNS backup and restore, zonetool.py (written 2024-09, committed 2025-12-11)
+- Added: Claude Code status line prompt (2026-05-27, updated 2026-07-29)
+- Added: best-practices/Small-PRs.md, a write-up on shipping smaller pull requests (2026-07-25, moved into
+  best-practices/ 2026-07-29)
+- Added: Claude Code telemetry opt-out script (2026-09-12)
+- Removed: A pylint CI workflow (added 2024-09-12, removed 2024-09-15)
