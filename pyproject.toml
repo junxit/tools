@@ -7,7 +7,7 @@ readme = "README.md"
 # is pinned in .python-version, and uv.lock resolves against it.
 requires-python = ">=3.15"
 dependencies = [
-    "dnspython==2.9.0",
+    "dnspython==2.9.2",
     "requests==2.34.2",
 ]
 
